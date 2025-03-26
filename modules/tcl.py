@@ -16,7 +16,7 @@ class TemporalCasualLearning(nn.Module):
         self.fold = self.in_channels // n_div
         self.causal_shift = nn.Conv1d(
                                     self.in_channels, self.in_channels,
-                                    kernel_size=3, padding=3, groups=self.in_channels,dilation=3,
+                                    kernel_size=3, padding=0, groups=self.in_channels,dilation=3,
                                     bias=False)
         self.trans = nn.Conv1d(
                                     self.in_channels*2, self.in_channels,
@@ -42,10 +42,12 @@ class TemporalCasualLearning(nn.Module):
         x_shift = x.permute([0, 3, 4, 1, 2])
         x_shift = x_shift.contiguous().view(n*h*w, c, t)
 
-        xz_f = self.causal_shift(x_shift)
-        xz_b =  self.causal_shift(x_shift.flip([-1]))
-
-        x_combined = torch.cat((xz_f, xz_b.flip([-1])), dim=1)  # 
+        xz_b  = nn.functional.pad(x_shift, (0, 6)) 
+        xz_b = self.action_shift(xz_b)
+        
+        xz_f =  nn.functional.pad(x_shift, (6,0))
+        xz_f = self.action_shift(xz_f)
+        x_combined = torch.cat((xz_b, xz_f), dim=1)  # 
         x_combined = self.trans(x_combined)
 
         x_combined = x_combined.view(n, h, w, c, t)
@@ -55,6 +57,6 @@ class TemporalCasualLearning(nn.Module):
         return x_combined
 
 #x = torch.randn(2,512,20,7,7)
-#ts = TemporalShift(512,8)
-#y = ts(x)
+#ts = TemporalCasualLearning(512,8)
+#y = tcl(x)
 #print(y.shape)
