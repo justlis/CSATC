@@ -43,10 +43,10 @@ class TemporalCasualLearning(nn.Module):
         x_shift = x_shift.contiguous().view(n*h*w, c, t)
 
         xz_b  = nn.functional.pad(x_shift, (0, 6)) 
-        xz_b = self.action_shift(xz_b)
+        xz_b = self.causal_shift(xz_b)
         
         xz_f =  nn.functional.pad(x_shift, (6,0))
-        xz_f = self.action_shift(xz_f)
+        xz_f = self.causal_shift(xz_f)
         x_combined = torch.cat((xz_b, xz_f), dim=1)  # 
         x_combined = self.trans(x_combined)
 
